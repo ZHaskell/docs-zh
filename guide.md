@@ -238,4 +238,4 @@ Now run `cabal build` within your project directory, cabal should be able to dow
 After building complete, you can use `cabal run` to run your echo server and `nc 0.0.0.0 8080` to test it. That's it, happy hacking!
 {:/}
 
-构建完成后，可以使用 `cabal run` 来运行这个回音服务器，并用 `nc 0.0.0.0 8080` 来测试。教程结束，玩的愉快！
+构建完成后，可以使用 `cabal run` 来运行这个回音服务器，并用 `nc 0.0.0.0 8080` 来测试。教程结束，玩得愉快！
