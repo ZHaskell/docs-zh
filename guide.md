@@ -82,6 +82,8 @@ ArchLinux 用户可以使用 [ArchLinux CN 软件仓库](https://mirrors.bfsu.ed
 sudo pacman -Syu ghcup-hs-bin
 ```
 
+此外，GHCup 需要修改额外的配置文件来从镜像站下载 GHC、Haskell 语言服务器与 Cabal，参考[此处的文档](https://mirror.sjtu.edu.cn/docs/ghcup)。字符图形界面的 GHCup 更佳直观易用，并且会显示支持状态与推荐程度：运行 `ghcup tui`。
+
 + 杂项
 
 也可以获取预构建的二进制包后手动安装 [GHC](https://www.haskell.org/ghc/download.html) 和 [Cabal](https://www.haskell.org/cabal/download.html)。
@@ -128,16 +130,6 @@ Now run `cabal build` within your project directory, cabal should be able to dow
     `cabal` will ask you some questions about your project and create a `tcp-echo.cabal` file.
 {:/}
 
-1. 使用 `cabal` 命令初始化项目
-
-    ```
-    mkdir tcp-echo
-    cd tcp-echo
-    cabal init -i
-    ```
-
-    `cabal` 将需要获取一些与项目有关的信息来初始化 `tcp-echo.cabal` 文件。
-
 {::comment}
 2. Add dependencies.
 
@@ -149,14 +141,6 @@ Now run `cabal build` within your project directory, cabal should be able to dow
     ```
 {:/}
 
-2. 编辑 Cabal 项目配置文件以添加依赖
-
-    用一个文本编辑器打开 `tcp-echo.cabal` 文件，并将以下内容添加到 `executable` 一节。
-
-    ```
-    ...
-        build-depends:          Z-IO  == {{site.data.version.z_version}}.*
-    ```
 
 {::comment}
 3. Edit code.
@@ -178,23 +162,6 @@ Now run `cabal build` within your project directory, cabal should be able to dow
     ```
 {:/}
 
-3. 编辑代码
-
-    编辑 `src/Main.hs` 文件来创建一个简单的 TCP 回音服务器：
-
-    ```haskell
-    import Control.Monad
-    import Z.IO
-    import Z.IO.Network
-
-    main :: IO ()
-    main = do
-        let addr = SocketAddrIPv4 ipv4Loopback 8080
-        startTCPServer defaultTCPServerConfig{ tcpListenAddr = addr } $ \ tcp -> do
-            i <- newBufferedInput tcp
-            o <- newBufferedOutput tcp
-            forever $ readBuffer i >>= writeBuffer o >> flushBuffer o
-    ```
 
 {::comment}
 4. Build!
@@ -215,6 +182,47 @@ Now run `cabal build` within your project directory, cabal should be able to dow
 
     It may take a while to build for the first time because cabal needs to download and build all the dependencies. Build afterward will be faster since dependencies are cached. For reference, on an intel 4th gen core, it takes around 10mins to compile Z-Data and Z-IO. So sit back and relax, or go for a coffee.
 {:/}
+
+
+1. 使用 `cabal` 命令初始化项目
+
+    ```
+    mkdir tcp-echo
+    cd tcp-echo
+    cabal init -i
+    ```
+
+    `cabal` 将需要获取一些与项目有关的信息来初始化 `tcp-echo.cabal` 文件。
+
+
+2. 编辑 Cabal 项目配置文件以添加依赖
+
+    用一个文本编辑器打开 `tcp-echo.cabal` 文件，并将以下内容添加到 `executable` 一节。
+
+    ```
+    ...
+        build-depends:          Z-IO  == {{site.data.version.z_version}}.*
+    ```
+
+3. 编辑代码
+
+    编辑 `src/Main.hs` 文件来创建一个简单的 TCP 回音服务器：
+
+    ```haskell
+    import Control.Monad
+    import Z.IO
+    import Z.IO.Network
+
+    main :: IO ()
+    main = do
+        let addr = SocketAddrIPv4 ipv4Loopback 8080
+        startTCPServer defaultTCPServerConfig{ tcpListenAddr = addr } $ \ tcp -> do
+            i <- newBufferedInput tcp
+            o <- newBufferedOutput tcp
+            forever $ readBuffer i >>= writeBuffer o >> flushBuffer o
+    ```
+
+
 
 4. 构建运行
 
