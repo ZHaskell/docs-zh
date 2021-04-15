@@ -145,6 +145,7 @@ The `UVStream` type implements the `Input/Output` class from `Z.IO.Buffered`, so
 
 由于 `UVStream` 类型是 `Z.IO.Buffered` 模块中 `Input` 和 `Output` 类的实例，因此可以复用所有与带缓冲读写（Buffered read / write）相关的 API。假设已经设计了一个简单的帧消息协议（Framed Message Protocol）：
 
+{::comment}
 ```haskell
 import Data.Word
 import qualified Z.Data.Vector as V
@@ -156,8 +157,9 @@ import qualified Z.Data.Vector as V
 
 data Message = Message { msgTyp :: Word8, msgPayload :: V.Bytes }
 ```
+{:/}
 
-{::comment}
+
 ```haskell
 import Data.Word
 import qualified Z.Data.Vector as V
@@ -169,7 +171,7 @@ import qualified Z.Data.Vector as V
 
 data Message = Message { msgTyp :: Word8, msgPayload :: V.Bytes }
 ```
-{:/}
+
 
 {::comment}
 You can manually decode message frames like this:

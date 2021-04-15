@@ -1,20 +1,33 @@
 ---
 layout: default
 parent: Z-Data
-title: FFI
+title: FFI：外语函数接口
 nav_order: 5
 ---
 
+{::comment}
 ## Table of contents
+{:/}
+## 目录
+
 {: .no_toc .text-delta }
 
 1. TOC
 {:toc}
 
+{::comment}
 # FFI: Foreign Function Interface
+{:/}
 
+# FFI：外语函数接口
+
+{::comment}
 The Haskell [foreign function interface](https://wiki.haskell.org/Foreign_Function_Interface) is a specification to call foreign functions(mainly C functions) from Haskell. It looks like this:
+{:/}
 
+Haskell 的[外语函数接口](https://wiki.haskell.org/Foreign_Function_Interface)描述了当需要从其它语言（主要是 C）调用函数时，在 Haskell 中应该怎样做。写起来一般是如下形式：
+
+{::comment}
 + In `Foo.hs`:
 
     ```haskell
@@ -36,24 +49,99 @@ The Haskell [foreign function interface](https://wiki.haskell.org/Foreign_Functi
         c-sources: foo.c
     ...
     ```
+{:/}
 
++ 在文件 `Foo.hs` 中：
+
+    ```haskell
+    foreign import ccall unsafe "foo" c_foo :: CInt -> CInt -> IO CInt
+    ```
+
++ 在文件 `foo.c` 中：
+
+    ```c
+    int foo(int x, int y){
+        ...
+    }
+    ```
+
++ 在 Cabal 配置文件（proj.cabal）中：
+
+    ```yaml
+    ...
+        c-sources: foo.c
+    ...
+    ```
+
+此外，GHC 也提供了用于处理 C 函数绑定的预处理器：[`hsc2hs`](http://git.haskell.org/packages/hsc2hs.git)。
+
+{::comment}
 With proper setup, cabal could orchestrate the compilation and give you a static linked binary. The FFI specification specify the concrete syntax in Haskell side, to ensure a successful FFI call, you have to pay attention to several aspects:
+{:/}
 
+一旦合适的准备工作完成，Cabal 便可以指挥编译过程并返回静态连接的二进制文件。Haskell 的 FFI 细则规定了在 Haskell 端的具体语法。要确保 FFI 调用顺利完成，需要注意以下几个方面：
+
+{::comment}
 + The types in Haskell and C are matched.
 + How to allocate memory for C side, and when to free.
 + The difference between unsafe FFI calls, and [safe ones](https://simonmar.github.io/bib/papers/conc-ffi.pdf).
+{:/}
 
++ 需要自行确保在 Haskell 端和 C 端的类型匹配
++ 在 C 端应该如何分配和释放内存
++ 函数所涉及副作用的控制
++ 安全（safe）和不安全（unsafe）的 FFI 调用的区别，参考[此处](https://simonmar.github.io/bib/papers/conc-ffi.pdf)
+
+{::comment}
 Beside above points, you'll have to use correct calling conventions(which would be ccall for most of the time), write C wrappers if you want to call C++, etc.
+{:/}
 
+除此之外，需要使用正确的调用方式（一般是 `ccall`）。如果要调用 C++ 函数，可以通过写一个对应的 C 函数封装。
+
+{::comment}
 # FFI Types
+{:/}
 
+# FFI 类型
+
+{::comment}
 Here's a table of common FFI types that can be passed between C and Haskell, and where can you find them:
+{:/}
 
+下表是一些常用的 FFI 类型和它们的位置，这些类型可以用于在 C 与 Haskell 之间传递。
+
+{::comment}
 | C type, header     |  Haskell type, module  | Haskell type(with `UnliftedFFITypes` enable), module |
 |--------------------|------------------------|------------------------------------------------------|
 | bool, built-in     | CBool, Foreign.C.types | -                                                    |
 | int, built-in      | CInt, Foreign.C.types  | -                                                    |
-| uint, built-in     | CUInt, Foreign.C.types | -                                                    |                                                   
+| uint, built-in     | CUInt, Foreign.C.types | -                                                    |
+| long, built-in     | CLong, Foreign.C.types | -                                                    |
+| ulong, built-in    | CULong, Foreign.C.types| -                                                    |
+| uchar, built-in    | Word8, Data.Word       | -                                                    |
+| char, built-in     | Int8, Data.Word        | -                                                    |
+| uint8_t, stdint.h  | Word8, Data.Word       | -                                                    |
+| uint16_t, stdint.h | Word16, Data.Word      | -                                                    |
+| uint32_t, stdint.h | Word32, Data.Word      | -                                                    |
+| uint64_t, stdint.h | Word64, Data.Word      | -                                                    |
+| int8_t, stdint.h   | Int8, Data.Int         | -                                                    |
+| int16_t, stdint.h  | Int16, Data.Int        | -                                                    |
+| int32_t, stdint.h  | Int32, Data.Int        | -                                                    |
+| int64_t, stdint.h  | Int64, Data.Int        | -                                                    |
+| type \*, built-in  | Ptr type, Foreign.Ptr  | Addr#, GHC.Prim                                      |
+| HsInt, HsFFI.h     | Int, Prelude           | Int#, GHC.Prim                                       |
+| HsWord, HsFFI.h    | Word, Prelude          | Word#, GHC.Prim                                      |
+| HsBool, HsFFI.h    | Bool, Prelude          | -                                                    |
+| double, built-in   | Double, Prelude        | Double#, GHC.Prim                                    |
+| float, built-in    | Float, Prelude         | Float#, GHC.Prim                                     |
+| size_t, stddef.h   | CSize, Foreign.C.types | Word#, GHC.Prim                                      |
+{:/}
+
+| C 类型和所在头文件 | Haskell 类型和所在模块 | Haskell 类型（启用 `UnliftedFFITypes`）和所在模块    |
+|--------------------|------------------------|------------------------------------------------------|
+| bool, built-in     | CBool, Foreign.C.types | -                                                    |
+| int, built-in      | CInt, Foreign.C.types  | -                                                    |
+| uint, built-in     | CUInt, Foreign.C.types | -                                                    |
 | long, built-in     | CLong, Foreign.C.types | -                                                    |
 | ulong, built-in    | CULong, Foreign.C.types| -                                                    |
 | uchar, built-in    | Word8, Data.Word       | -                                                    |
@@ -74,28 +162,60 @@ Here's a table of common FFI types that can be passed between C and Haskell, and
 | float, built-in    | Float, Prelude         | Float#, GHC.Prim                                     |
 | size_t, stddef.h   | CSize, Foreign.C.types | Word#, GHC.Prim                                      |
 
-
+{::comment}
 Some types' size depend on platform(32-bit, 64-bit), e.g. the `HsInt/Int` 's size is 32 bits on 32-bit machine, or 64 bits on 64-bit ones. GHC also support passing some array types to C but not vice versa:
+{:/}
 
+一些类型的大小是平台相关（如 32 位、64 位间存在区别）的，如 `HsInt` 和 `Int` 的大小在 32 位计算机上是 32 位，而在 64 位计算机上是 64 位。GHC 也支持将某些数组（array）类型传递到 C 但并不是反之亦然：
+
+{::comment}
 | C type, header     |  Haskell type, module  | Haskell type(with `UnliftedFFITypes` enable), module |
 | type \*, built-in  | -                      | MutableByteArray#, GHC.Prim                          |
 | const type \*, built-in | -                 | ByteArray#, GHC.Prim                                 |
 | StgMutArrPtrs \*(ghc<8.10), StgArrBytes \*\*, Rts.h | - | ArrayArray#, GHC.Prim                    |
+{:/}
 
+| C 类型和所在头文件   |  Haskell 类型和所在模块  | Haskell 类型（启用 `UnliftedFFITypes`）和所在模块 |
+| type \*, built-in   | -                      | MutableByteArray#, GHC.Prim                          |
+| const type \*, built-in | -                 | ByteArray#, GHC.Prim                                 |
+| StgMutArrPtrs \*(ghc<8.10), StgArrBytes \*\*, Rts.h | - | ArrayArray#, GHC.Prim                    |
+
+
+{::comment}
 The Haskell FFI specification also support function address, which is useful when used as weak pointer's finailizers.
+{:/}
+
+Haskell 的 FFI 细则同时支持使用函数地址。可以用来处理弱指针的析构函数。
 
 ```haskell
 foreign import ccall "&free" free :: FunPtr (Ptr Word8 -> IO ())
 ```
 
+{::comment}
 # Allocate and free
+{:/}
 
+# 内存的分配与释放
+
+{::comment}
 It's common to have a C function needs dynamic allocated arrays, there're two solutions in general:
+{:/}
 
+在 C 函数中常常需要用到动态分配内存的数组，要在 Haskell 的 FFI 中调用它们，下面是两种常见的解决思路：
+
+{::comment}
 + Allocate from C side, pass pointer back to Haskell, then use `ForeignPtr` from `Foreign.ForeignPtr` or `CPtr` from `Z.Foreign.CPtr` to wrap it, and ensure the memory will be freed when no longer needed.
 + Allocate from Haskell side as a GC managed heap object, then pass to C for manipulation.
+{:/}
 
-Usually it's recomended to use the second method, since the memory is still under GHC GC's management, so you don't have to worry about free. 
++ 在 C 端分配内存并将对应的指针传回 Haskell 端。使用模块 `Foreign.ForeignPtr` 中的类型 `ForeignPtr` 或模块 `Z.Foreign.CPtr` 中的 `CPtr` 类型来封装它。注意确保在不再需要时释放这片内存。
++ 在 Haskell 端作为 GC（垃圾回收）可管理的堆对象分配内存，再传递给 C 端处理。
+
+{::comment}
+Usually it's recomended to use the second method, since the memory is still under GHC GC's management, so you don't have to worry about free.
+{:/}
+
+一般推荐参考第二种模式，由于此时使用的内存仍然处于 GHC 的 GC 管理之下，因此不用手动释放和担心泄露。
 
 ## Allocate memory and pass to C
 
@@ -140,7 +260,7 @@ foreign import ccall unsafe c_add_and_time :: Int -> Int -> MBA# Int ->  MBA# In
 cAddTime :: Int -> Int -> (Int, Int)
 cAddTime x y = do
     fst <$> allocPrimUnsafe @Int (\ add_result ->
-        fst <$> allocPrimUnsafe @Int (\ time_result -> 
+        fst <$> allocPrimUnsafe @Int (\ time_result ->
             c_add_and_time x y add_result time_result))
 ```
 
@@ -188,7 +308,7 @@ The safe FFI variation `withPrimVectorSafe` is simplier, the offset is directly 
 
 ## Null terminated strings
 
-C use a lot of null ternimated strings, i.e. `char*` where no length info is needed because it's assumed that the string always ended with a NULL ternimator. In Haskell we provide a special type for this, that is the `CBytes` type from `Z.Data.CBytes` module. Similar to `withPrimVectorUnsafe` and `WithPrimVectorSafe`, use `WithCBytesUnsafe` and `withCBytes` to pass a `CBytes` to C FFI. 
+C use a lot of null ternimated strings, i.e. `char*` where no length info is needed because it's assumed that the string always ended with a NULL ternimator. In Haskell we provide a special type for this, that is the `CBytes` type from `Z.Data.CBytes` module. Similar to `withPrimVectorUnsafe` and `WithPrimVectorSafe`, use `WithCBytesUnsafe` and `withCBytes` to pass a `CBytes` to C FFI.
 
 ```haskell
 > :m + Z.Data.CBytes Z.Foreign Data.Word
@@ -366,7 +486,7 @@ BotanE(BadMac)
 ...
 ```
 
-* And provide helpers for FFI code: 
+* And provide helpers for FFI code:
 
 ```haskell
 throwBotanIfMinus :: (HasCallStack, Integral a) => IO a -> IO a
