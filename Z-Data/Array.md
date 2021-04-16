@@ -38,7 +38,7 @@ indexInt16Array# :: ByteArray# -> Int# -> Int#
 {::comment}
 It's hard to directly use those functions because they directly manipulate `State#` token, and they distinguish different array types: boxed `Array#`, `ByteArray#`, etc. The `#` after those types imply they are special primitive types, which will be discussed later.
 {:/}
-我们很难直接使用这些函数，因为它们直接操作`State#`令牌，并且它们区分不同的数组类型：如封装类型(uboxed)的`Array#`，`ByteArray#`等。这些类型后的`#`表示它们是特殊的原始类型，我们将稍后将进行讨论。
+我们很难直接使用这些函数，因为它们直接操作`State#`令牌，并且它们区分不同的数组类型：如盒装的(boxed)`Array#`，`ByteArray#`等。这些类型后的`#`表示它们是特殊的原始类型，我们将稍后将进行讨论。
 
 {::comment}
 In [Z-Data](https://hackage.haskell.org/package/Z-Data)，we provide type wrappers and typeclass to unified array operations:
@@ -144,7 +144,7 @@ class Arr (arr :: * -> * ) a where
     -- | Resize mutable array to given size.
     resizeMutableArr :: (PrimMonad m, PrimState m ~ s) => marr s a -> Int -> m (marr s a)
     -- | 收缩数组的大小至指定值. 该操作只能对原生数组生效.
-    -- 对于封装类型的数组, 这个操作是一个无用操作, 即 'sizeOfMutableArr' 不会改变.
+    -- 对于盒装的数组, 这个操作是一个无用操作, 即 'sizeOfMutableArr' 不会改变.
     shrinkMutableArr :: (PrimMonad m, PrimState m ~ s) => marr s a -> Int -> m ()
     -- | 两个可变数组是否指向同一个引用.
     sameMutableArr :: marr s a -> marr s a -> Bool
@@ -183,19 +183,19 @@ instance PrimUnlifted a => Arr UnliftedArray a where
 {:/}
 
 ```haskell
--- | 封装数组类型, 持有haskell抽象数据类型.
+-- | 盒装的数组类型, 持有haskell抽象数据类型.
 instance Arr Array a where
     type MArr Array = MutableArray
     ...
--- | 封装数组类型, 持有haskell抽象数据类型, 但没有卡片表.
+-- | 盒装的数组类型, 持有haskell抽象数据类型, 但没有卡片表.
 instance Arr SmallArray a where
     type MArr SmallArray = SmallMutableArray
     ...
--- | 非封装数组类型, 持有原生数据类型如Int, Word8等.
+-- | 非盒装的数组类型, 持有原生数据类型如Int, Word8等.
 instance Prim a => Arr PrimArray a where
     type MArr PrimArray = MutablePrimArray
     ...
--- | 封装数组类型, 持有封装的非提升类型, 详见后续章节.
+-- | 盒装的数组类型, 持有盒装非提升的类型, 详见后续章节.
 instance PrimUnlifted a => Arr UnliftedArray a where
     type MArr UnliftedArray = MutableUnliftedArray
     ...
@@ -211,7 +211,7 @@ If you know how `IO` works in Haskell, `PrimMonad` simply means `ST` or `IO`. Bu
 {::comment}
 # Boxed, Unboxed
 {:/}
-# 封装类型，非封装类型
+# 盒装的，非盒装的
 
 {::comment}
 For many haskellers, using arrays may be the first time one wants to know what's the difference between boxed, unboxed types. It's important to spend some time explaining these buzzwords.
@@ -278,18 +278,18 @@ Are represented as:
 During runtime the value `foo` is a reference, and all the operations, e.g. pattern match, go through dereferencing. Values like this are called *boxed* because it's a reference to a box, i.e. heap objects with [info-table](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/rts/storage/heap-objects#info-tables). The info-table contains many useful infomation about the box, such as how many words the boxed occupied, which constructor the box stand for, etc.
 {:/}
 
-在运行时，值`foo`是引用，且所有的操作，例如模式匹配，都需要进行引用求值(dereferencing)。这样的值称为*封装类型(boxed)*，因为它是对盒子的引用，即持有[info-table](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/rts/storage/heap-objects#info-tables)的堆上对象。信息表(info-table)包含有关该盒子的许多有用信息，例如，盒子所占用的字节数，盒子所对应的构造函数等。
+在运行时，值`foo`是引用，且所有的操作，例如模式匹配，都需要进行引用求值(dereferencing)。这样的值称为*盒装的(boxed)*，因为它是对盒子的引用，即持有[info-table](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/rts/storage/heap-objects#info-tables)的堆上对象。信息表(info-table)包含有关该盒子的许多有用信息，例如，盒子所占用的字节数，盒子所对应的构造函数等。
 
 {::comment}
 The `3#` and `'a'#` above are haskell's non-pointer value, we call values like this *unboxed* values. Unboxed values don't have info-tables, so we really can't have them directly on heap: otherwise the GC would get confused when it scans them: without infomation from info-table, it can't decide how many bytes to copy. These values are usually belong to registers or other boxes: we generate machine code to manipulate them directly.
 {:/}
 
-上面用到的 `3#` 和 `'a'#` 是haskell的非指针值，我们称这些值为 *非封装类型((unboxed)* 值。未封装的值没有信息表，因此我们不能将它们直接放在堆上：否则，GC在扫描它们时会感到困惑：如果没有来自信息表的信息，则无法确定要复制多少字节。这些值通常属于寄存器或其他盒子：我们生成机器码以直接对其进行操作。
+上面用到的 `3#` 和 `'a'#` 是haskell的非指针值，我们称这些值为 *非盒装的((unboxed)* 值。非盒装的值没有信息表，因此我们不能将它们直接放在堆上：否则，GC在扫描它们时会感到困惑：如果没有来自信息表的信息，则无法确定要复制多少字节。这些值通常属于寄存器或其他盒子：我们生成机器码以直接对其进行操作。
 
 {::comment}
 ## Boxed array
 {:/}
-## 封装的（Boxed）数组
+## 盒装的（Boxed）数组
 
 {::comment}
 Now let's consider GHC arrays, they're special heap objects provided by RTS. We have boxed arrays `MutableArray#` and `Array#` that store references to boxes:
@@ -323,7 +323,7 @@ Now let's consider GHC arrays, they're special heap objects provided by RTS. We 
                                                     | info-table* | ... |
                                                     +-------------+-----+
                                                       盒子, 可能是一个 thunk
-                                                      封装的数组大部分操作作用于数组元素时都是懒加载的
+                                                      盒装的数组大部分操作作用于数组元素时都是懒加载的
 ```
 
 {::comment}
@@ -363,12 +363,12 @@ Haskell中的一种常见模式是在完成创建后通过冻结(freeze)操作�
 {::comment}
 ## Unboxed array
 {:/}
-## 非封装数组
+## 非盒装的数组
 
 {::comment}
 `MutableByteArray#`, `ByteArray#` are GHC's unboxed array. They don't contain pointers, and their payload do not need to be traced during GC:
 {:/}
-`MutableByteArray#`, `ByteArray#` 是GHC的未封装数组(unboxed array)。它们不包含指针，并且在GC期间无需关注他们的负载(payload)：
+`MutableByteArray#`, `ByteArray#` 是GHC的非盒装的数组(unboxed array)。它们不包含指针，并且在GC期间无需关注他们的负载(payload)：
 
 ```
 +-------------+--------------+-------------+---+-...-+---+---+
