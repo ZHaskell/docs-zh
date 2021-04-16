@@ -4,6 +4,14 @@
 
 使用 git 克隆 [docs-zh](https://github.com/ZHaskell/docs-zh.git) 仓库到本地。使用 `bundle install` 获取依赖，使用 `bundle exec jekyll serve` 在本地启动一个网页服务器，稍后可以在编辑时访问查看修改的效果。
 
+### 杂项 | Misc
+
+如果要在 Emacs 中使用 `stylish-haskell`：
+
+```elisp
+(setq lsp-haskell-formatting-provider "stylish-haskell")
+```
+
 ## 翻译规范 | Translation Specifications
 
 [感谢 Oling Cat](https://github.com/Agda-zh/PLFA-zh/issues/1)。
