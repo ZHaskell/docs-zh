@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Blog
+title: 博客
 ---
 
 <ul>
