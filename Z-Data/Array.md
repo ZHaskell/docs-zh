@@ -384,6 +384,7 @@ Haskell中的一种常见模式是在完成创建后通过冻结(Freeze)操作�
 
 `ByteArray#` 可以用来编码不同大小的非指针数据，例如`Int`和`Word8`，`ghc-prim` 提供了独立的函数来处理不同的数据类型：如 `indexIntArray#`，`indexWord8Array#` 等，因此我们提供了 `Prim` 类型类和 `PrimArray` 类型，这让使用不同的类型更加容易：
 
+{::comment}
 ```haskell
 -- types which can be stored in ByteArray# 
 class Prim a where
@@ -396,31 +397,87 @@ data PrimArray a = PrimArray ByteArray#
 indexPrimArray :: Prim a => PrimArray a -> Int -> a
 ...
 ```
+{:/}
+```haskell
+-- 可以存储在 ByteArray# 中的类型
+class Prim a where
+    indexByteArray# :: ByteArray# -> Int# -> a
+    ...
 
+-- | 被 ByteArray# 索引的类型
+data PrimArray a = PrimArray ByteArray#
+
+indexPrimArray :: Prim a => PrimArray a -> Int -> a
+...
+```
+
+
+{::comment}
 # Lifted, Unlifted
+{:/}
+# 提升的，非提升的
 
+
+{::comment}
 Another difference between types: unlifted and lifted, exists because in haskell we have non-strict evaluation mechanism, e.g. a value `1 + 2` may have a representation like:
+{:/}
 
+类型之间的另一个区别是：非提升的和提升的，这是因为在haskell中，我们具有 non-strict evaluation 机制，例如值 `1 + 2` 可能具有以下表示形式：
+
+
+{::comment}
+```
++-------------+----------+---+    +-------------+----+
+| info-table* | reserved | * +----+ info-table* | 2# |
++------+------+----------+---+    +-------------+----+
+       |                           This is I#
+       V
+ The info-table points to (+1) code.
+```
+{:/}
 ```
 +-------------+----------+---+    +-------------+----+
 | info-table* | reserved | * +--->+ info-table* | 2# |
 +------+------+----------+---+    +-------------+----+
        |                           This is I#
        V
- The info-table points to (+1) code.
+ info-table 指向 (+1) 代码.
 ```
 
+{::comment}
 In Haskell `1 + 2` and `3` are both references, they can be used interchangeably: a function expecting an `Int` argument can accept both pointers. This is done by *entering* the heap objects. i.e. execute the entry code following the info-table. The entry code for constructors are simply returns. For thunks the code will do evaluation and the `reserved` word above is reserved exactly for evaluation result, by writing a forward pointer and change the thunk box into an indirection box.
+{:/}
 
+在Haskell中，`1 + 2` 和 `3` 都是引用，它们可以互换使用：这两个指针都可以被以 `Int` 为参数的函数接受。这是通过 *entering* 堆对象来完成的。即执行 info-table 重的 entry code。构造函数的 entry code 仅仅只做返回一件事。对于 thunk ，代码将进行求值，并且通过写入前向指针(Forward pointer)并将 thunk box 修改为 indirection box ，上面的 `reserved` 字段正是用来保存求值结果的。
+
+{::comment}
 The evaluation may fail(diverged recursion, stackoverflow, etc.), so the pointer could potentially point to an undefined value, this kind of things are called *bottom* in haskell, written as `_|_`. The intuition for this name is that all the other evaluated values have certain meaning, but bottom doesn't, it sits lower in the spectrum of determinism, concreteness, usefulness ... whatever suits your mind. Hence comes the concept of `lifted` type, i.e. types which contain `bottom` values, or more formly, inhabited by `_|_`.
+{:/}
+求值过程可能会失败（发散递归，堆栈溢出等），因此指针可能指向未定义的值，这种情况在haskell中称为 *bottom*，写为 `_|_` 。之所以被称为 *bottom* ，是因为所有其他被求值的值都具有确定的语义，但 *bottom* 却没有，它在确定性，具体性，有用性等方面会比其他类型的值来说更差一些…… 因此，产生了 `lifted` 类型的概念，即包含 *bottom* 的值。
 
+{::comment}
 As you expected, most of the boxed type can be inhabited by `_|_`, the thunk may explode and terminate your program, or call `error` or `undefined` in base. And most of the unboxed types are unlifted types. e.g. It's impossible that an `Int#` would stand for an undefined value, because all 1-0 arrangements would represent a `Int#`, or put it another way: there's no way we get a bottom from `Int#`, because it doesn't have an info-table, and we can't enter it.
+{:/}
+如您所料，大多数盒装类型都包含了 `_|_` ，thunk 可能会因异常并终止您的程序，或者在代码中调用 `error` 或 `undefined` 。而且大多数非盒装的类型都是非提升类型。一个 `Int#` 代表一个未定义的值是不可能的，因为所有的1-0排列都是用来表示一个 `Int#` 。或者换个说法：我们不可能从 `Int#` 中得到 *bottom* ，因为它没有 info-table ，我们也无法“进入”其中。
 
+{::comment}
 But some boxed unlifted types do exist, e.g. `MutableArray#/Array#` are such types, their representation on heap have an info-table pointer, but they were never entered. All the primitive operations manipulating them won't enter them, and the only way to create them is via `newArray#`, `cloneArray#`, etc. 
+{:/}
+但是确实存在一些盒装的非提升的类型，例如 `MutableArray#/Array#` 就是这样的类型，它们在堆上的表示里有一个 info-table 的指针，但是从来没有“进入”过。所有操纵他们的原语都不会“进入”他们的 entry code ，创建它们的唯一方法是通过 `newArray#`, `cloneArray#` 等。
 
+{::comment}
 To efficiently store boxed unlifted types, `Unlifted` class and `UnliftedArray` type are introduced similar to `Prim` and `PrimArray`, `UnliftedArray` store unlifted references instead of normal haskell ADTs. Comparing `Array Array`, `UnliftedArray Array` could remove a level of redirection, i.e. remove item's `Array` box and store `Array#` directly.
+{:/}
+为了有效地存储盒装的非提升类型，引入了 `Unlifted` 类和 `UnliftedArray` 类型，类似于 `Prim`  和 `PrimArray` ，`UnliftedArray` 存储非提升的引用而不是常规的 haskell ADT。与 `Array Array` 相比, `UnliftedArray Array` 可以去掉一层重定向，即移除 `Array` 盒子并直接存储 `Array#` 类型。
 
+{::comment}
 # More on arrays
+{:/}
+# 有关数组的更多信息
 
+{::comment}
 There're more details on Haskell arrays, such as pinned vs unpinned `ByteArray`s, etc. Interested readers could find all these details on [GHC wiki](https://gitlab.haskell.org/ghc/ghc/-/wikis/home), especially on RTS section.
 To use array properly, all you need to do is choose the proper storage type and import `Z.Data.Array`. In next section we will introduce vectors, which is simply slices of arrays.
+{:/}
+Haskell数组有更多相关的内容，例如 `pinned` 和 `unpinned` 的 `ByteArray` 等。有兴趣的读者可以在[GHC Wiki]（https://gitlab.haskell.org/ghc/ghc/-/wikis/home），中找到相关的信息，尤其是在RTS部分。
+要正确使用数组，你需要做的就是选择适当的存储类型并导入 `Z.Data.Array`。在下一节中，我们将介绍 `vector` ，它只是数组的切片。
