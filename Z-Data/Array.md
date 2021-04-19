@@ -479,5 +479,5 @@ To efficiently store boxed unlifted types, `Unlifted` class and `UnliftedArray` 
 There're more details on Haskell arrays, such as pinned vs unpinned `ByteArray`s, etc. Interested readers could find all these details on [GHC wiki](https://gitlab.haskell.org/ghc/ghc/-/wikis/home), especially on RTS section.
 To use array properly, all you need to do is choose the proper storage type and import `Z.Data.Array`. In next section we will introduce vectors, which is simply slices of arrays.
 {:/}
-Haskell数组有更多相关的内容，例如 `pinned` 和 `unpinned` 的 `ByteArray` 等。有兴趣的读者可以在[GHC Wiki]（https://gitlab.haskell.org/ghc/ghc/-/wikis/home），中找到相关的信息，尤其是在RTS部分。
+Haskell数组有更多相关的内容，例如 `pinned` 和 `unpinned` 的 `ByteArray` 等。有兴趣的读者可以在[GHC wiki](https://gitlab.haskell.org/ghc/ghc/-/wikis/home)，中找到相关的信息，尤其是在RTS部分。
 要正确使用数组，你需要做的就是选择适当的存储类型并导入 `Z.Data.Array`。在下一节中，我们将介绍 `vector` ，它只是数组的切片。
