@@ -193,7 +193,11 @@ initRes123 = do
     return (res1, res2, res3)
 ```
 
+{::comment}
 Now `withResource initRes123 $ \ (res1, res2, res3) -> ...` will first open `res1`, `res2`, `res3` in order, then close them in reverse order. You could even interleave `IO` action within `Resource` using its `MonadIO` instance:
+{:/}
+
+于是使用 `withResource initRes123 $ \ (res1, res2, res3) -> ...` 将会依次开启资源 `res1`、`res2` 和 `res3`，在使用完后以相反顺序关闭它们。由于类型 `Resource` 是类型类 `MonadIO` 的实例，可以用函数 `liftIO` 来叠加 `Resource` 内的 `IO` 操作（注意到 `withResource :: (MonadMask m, MonadIO m, HasCallStack) => Resource a -> (a -> m b) -> m b`）。
 
 ```haskell
 initRes123 :: Resource (Res1, Res2)
@@ -204,28 +208,67 @@ initRes123 = do
     return (res1, res2)
 ```
 
+{::comment}
 The lifted `IO` action will become a part of the resource opening process.
+{:/}
 
+被提升后的 `IO` 操作将在资源开启过程中进行。
+
+{::comment}
 # Buffered I/O
+{:/}
 
+# 缓冲式输入输出（Buffered I/O）
+
+{::comment}
 `newBufferedInput` and `readLine` functions in the code above are from `Z.IO.Buffered` module(also re-exported from `Z.IO`). In Z-IO, many IO devices(including `File` above) are instances of `Input/Output` class:
+{:/}
 
+上文出现过的 `newBufferedInput` 与 `readLine` 函数都是模块 `Z.IO.Buffered` 的一部分（这些定义在模块 `Z.IO` 被重导出了）在 Z-IO 中，许多输入-输出设备（IO Devices），包括上文中的类型 `File` 在内，都是类型类 `Input` 与 `Output` 的实例。如果一个类型同时是它们的实例，它自动也是 `IODev` 的实例。
+
+{::comment}
 ```haskell
 class Input i where
     readInput :: HasCallStack => i -> Ptr Word8 -> Int -> IO Int
 class Output o where
     writeOutput :: HasCallStack => o -> Ptr Word8 -> Int -> IO ()
 ```
+{:/}
 
+```haskell
+class Input i where
+    readInput :: HasCallStack => i -> Ptr Word8 -> Int -> IO Int
+class Output o where
+    writeOutput :: HasCallStack => o -> Ptr Word8 -> Int -> IO ()
+type IODev io = (Input io, Output io)
+```
+
+{::comment}
 `readInput` and `writeOutput` work on pointers, which is not very convenient for direct usage. Open a `BufferedInput` or `BufferedOutput` to get auto-managed buffered I/O:
+{:/}
 
+函数 `readInput` 和 `writeOutput` 都直接作用在指针上，因此不便于直接使用。一般用类型为 `BufferedInput` 与 `BufferedOutput` 的元素一起来使用带自动管理的缓冲式输入输出。
+
+{::comment}
 ```haskell
 newBufferedInput :: Input i => i -> IO BufferedInput
 newBufferedOutput :: Output o => o -> IO BufferedOutput
 ```
+{:/}
 
+```haskell
+newBufferedInput :: Input i => i -> IO BufferedInput
+newBufferedOutput :: Output o => o -> IO BufferedOutput
+newBufferedIO :: IODev dev => dev -> IO (BufferedInput, BufferedOutput)
+```
+
+{::comment}
 There's a set of functions working on `BufferedInput/BufferedOutput` in `Z.IO.Buffered`, for example, to implement a word counter for files:
+{:/}
 
+在模块 `Z.IO.Buffered` 中有许多函数作用于 `BufferedInput` 或 `BufferedOutput`。例如，可以用它们实现一个文件计词器：
+
+{::comment}
 ```haskell
 import           Z.IO
 import qualified Z.IO.FileSystem    as FS
@@ -248,9 +291,38 @@ main = do
                 loop input (wc + length (V.words line'))
             _ -> return wc
 ```
+{:/}
 
+```haskell
+import           Z.IO
+import qualified Z.IO.FileSystem    as FS
+import qualified Z.Data.Vector      as V
+
+main :: IO ()
+main = do
+    -- 从命令行读取需要处理文件的路径
+    (_:path:_) <- getArgs
+    withResource (FS.initFile path FS.O_RDWR FS.DEFAULT_FILE_MODE) $ \ file -> do
+        bi <- newBufferedInput file
+        printStd =<< loop bi 0
+  where
+    loop :: BufferedInput -> Int -> IO Int
+    loop input !wc = do
+        -- 读取单行并丢弃换行符
+        line <- readLine input
+        case line of
+            Just line' ->
+                loop input (wc + length (V.words line'))
+            _ -> return wc
+```
+
+{::comment}
 Here's a quick cheatsheet on buffered IO, `BufferedInput` first:
+{:/}
 
+下面是一张有关 Z-IO 中缓冲式输入输出的速查表，首先介绍 `BufferedInput`：
+
+{::comment}
 ```haskell
 -- | Request a chunk from the input device.
 readBuffer :: HasCallStack => BufferedInput -> IO Bytes
@@ -284,9 +356,55 @@ readParser :: HasCallStack => Parser a -> BufferedInput -> IO a
 -- | Request input using ParseChunks, see Parser & Builder under Z-Data section.
 readParseChunks :: (Print e, HasCallStack) => ParseChunks IO Bytes e a -> BufferedInput -> IO a
 ```
+{:/}
 
+```haskell
+-- | 从输入设备中获取一个分块。
+readBuffer :: HasCallStack => BufferedInput -> IO Bytes
+
+-- | 回推一个未被消耗的分快。
+unReadBuffer :: HasCallStack => Bytes -> BufferedInput -> IO ()
+
+-- | 读恰好 n 个字节，如果在读完即少于 n 字节出遇到了文件终止符（EOF）则抛出异常。
+readExactly :: HasCallStack => Int -> BufferedInput -> IO Bytes
+
+-- | 读至魔法字（Magic Bytes）停止，连同魔法字本身一起返回所读的内容。
+--   注：魔法字又称为文件签名
+--  /----- readToMagic ------ \ /----- readToMagic ------\ ...
+-- +------------------+--------+-----------------+--------+
+-- |       ...        | 魔法字 |       ...       | 魔法字 | ...
+-- +------------------+--------+-----------------+--------+
+readToMagic :: HasCallStack => Word8 -> BufferedInput -> IO Bytes
+
+-- | 读至换行符（'\n' 或 '\r\n'），不连同换行符本身返回所读的内容。
+--  /--- readLine ----\   丢弃   /--- readLine ---\   丢弃   / ...
+-- +------------------+---------+------------------+---------+
+-- |      ...         | \r\n/\n |       ...        | \r\n/\n | ...
+-- +------------------+---------+------------------+---------+
+readLine :: HasCallStack => BufferedInput -> IO (Maybe Bytes)
+
+-- | 读取输入中的所有分块。
+readAll :: HasCallStack => BufferedInput -> IO [Bytes]
+readAll' :: HasCallStack => BufferedInput -> IO Bytes
+```
+
+有关以下函数的说明可参考 Z-Data 部分中 [Parser 与 Builder](https://zh.z.haskell.world/Z-Data/Parser-and-Builder.html) 一节。
+
+```haskell
+-- | 用给定的 Parser 并处理获取的输入。
+readParser :: HasCallStack => Parser a -> BufferedInput -> IO a
+
+-- | 用 'ParseChunks' 处理获取的输入。参见 Z-Data 部分中 Parser 与 Builder 一节。
+readParseChunks :: (Print e, HasCallStack) => ParseChunks IO Bytes e a -> BufferedInput -> IO a
+```
+
+{::comment}
 `BufferedOutput` is relatively simple:
+{:/}
 
+有关 `BufferedOutput`  的内容则相对简单：
+
+{::comment}
 ```haskell
 -- | Write a chunk into buffer.
 writeBuffer :: HasCallStack => BufferedOutput -> Bytes -> IO ()
@@ -295,21 +413,60 @@ writeBuilder :: HasCallStack => BufferedOutput -> Builder a -> IO ()
 -- | Flush the buffer into output device.
 flushBuffer :: HasCallStack => BufferedOutput -> IO ()
 ```
+{:/}
 
+
+
+```haskell
+-- | 向输出设备写入一个分块。
+writeBuffer :: HasCallStack => BufferedOutput -> Bytes -> IO ()
+-- | 向输出设备写入一个用给定 Builder 处理好的分块。
+writeBuilder :: HasCallStack => BufferedOutput -> Builder a -> IO ()
+-- | 将缓冲区冲入输出设备。
+flushBuffer :: HasCallStack => BufferedOutput -> IO ()
+-- | 向输出设备写入一个分块并将缓冲区冲入该输出设备。
+writeBuffer' :: HasCallStack => BufferedOutput -> Bytes -> IO ()
+```
+
+{::comment}
 # A note on filepath
+{:/}
 
+# 有关文件路径的注解
+
+{::comment}
 Other operations from `Z.IO.FileSystem` module, e.g., `seek`, `mkdtemp`, `rmdir`, etc., are basically mirroring the Unix system call, which should be familiar to people who come from C/C++. The type for file path in Z is `CBytes`, which is a `\NUL` terminated byte array managed on GHC heap.
+{:/}
 
+模块 `Z.IO.FileSystem` 中的许多操作函数，例如 `seek`、`mkdtemp` 和 `rmdir` 等，都可以被视作 UNIX 系统调用的移植，C 或 C++ 用户可能会对它们感到熟悉。在 Z 中基本的文件路径类型是 `CBytes`。它由 GHC 的堆管理，是一个以 `\NUL` 中止的字节数组。
+
+{::comment}
 We assumed that `CBytes`'s content is UTF-8 encoded though it may not always be the case, and there're some platform differences on file path handling, e.g., the separator on windows is different from Unix. To proper handle file path, use `Z.IO.FileSystem.FilePath` (which is re-exported from `Z.IO.FileSystem`), for example, instead of manually connecting file path like:
+{:/}
+
+我们总是假设 `CBytes` 元素的内容是 UTF-8 编码的，但事实上并是不总如愿。不同平台间文件路径的处理方式也有一些差异，例如 Windows 与 UNIX 的分隔符就不相同。模块 `Z.IO.FileSystem.FilePath`（在模块 `Z.IO.FileSystem` 中被重导出）处理了这些问题。例如，比起像这样手动拼接文件路径（错误的做法）：
 
 ```haskell
 let p = "foo" <> "/" <> "bar"
 ```
+{::comment}
 You should always use functions from the library
+{:/}
 
+应该使用函数：
+
+{::comment}
 ```haskell
 import qualified Z.IO.FileSystem as FS
 
 let p = "foo" `FS.join` "bar"
 -- "foo" `FS.join` "../bar" will yield "bar" instead of "foo/../bar"
+```
+{:/}
+
+```haskell
+import qualified Z.IO.FileSystem as FS
+
+let p = "foo" `FS.join` "bar"
+-- "foo" `FS.join` "../bar" 将会得到 "bar" 而不是不符合预期的 "foo/../bar"
 ```
