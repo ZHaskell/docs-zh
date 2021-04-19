@@ -223,7 +223,7 @@ For many Haskellers, using arrays may be the first time one wants to know what's
 In other languages, you often have to distinguish *reference* and *value*. For example, in C pointers are references to other objects. It's a memory location in hardware sense: you can use machine code to follow a reference to the memory it pointing to. While the other non-pointer types value are not memory locations, their 1-0 arrangements stands for a certain value of that type.
 {:/}
 
-在其他语言中，你通常必须区分 *引用* 和 *值*。例如，在C中，指针是对其他对象的引用。从硬件的角度来看，指针是一个内存地址：你可以使用机器代码来表示它所指向的内存的引用。而其他非指针类型的值就不是一个内存地址了，它们的1-0排列表示了该类型的某个值。
+在其他语言中，你通常必须区分 *引用* 和 *值*。例如，在C中，指针是对其他对象的引用。从硬件的角度来看，指针是一个内存地址：你可以使用机器码来找到它所指向的内存引用。而其他非指针类型的值就不是一个内存地址了，它们的1-0排列表示了该类型的某个值。
 
 {::comment}
 In Haskell almost every value you see is a pointer from C's perspective, i.e. a memory location point to a heap object, for example a data type like:
