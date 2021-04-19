@@ -212,7 +212,7 @@ initRes123 = do
 The lifted `IO` action will become a part of the resource opening process.
 {:/}
 
-提升后的 `IO` 操作将会成为资源开启过程中的一部分。
+被提升后的 `IO` 操作将在资源开启过程中进行。
 
 {::comment}
 # Buffered I/O
@@ -428,20 +428,45 @@ flushBuffer :: HasCallStack => BufferedOutput -> IO ()
 writeBuffer' :: HasCallStack => BufferedOutput -> Bytes -> IO ()
 ```
 
+{::comment}
 # A note on filepath
+{:/}
 
+# 有关文件路径的注解
+
+{::comment}
 Other operations from `Z.IO.FileSystem` module, e.g., `seek`, `mkdtemp`, `rmdir`, etc., are basically mirroring the Unix system call, which should be familiar to people who come from C/C++. The type for file path in Z is `CBytes`, which is a `\NUL` terminated byte array managed on GHC heap.
+{:/}
 
+模块 `Z.IO.FileSystem` 中的许多操作函数，例如 `seek`、`mkdtemp` 和 `rmdir` 等，都可以被视作 UNIX 系统调用的移植，C 或 C++ 用户可能会对它们感到熟悉。在 Z 中基本的文件路径类型是 `CBytes`。它由 GHC 的堆管理，是一个以 `\NUL` 中止的字节数组。
+
+{::comment}
 We assumed that `CBytes`'s content is UTF-8 encoded though it may not always be the case, and there're some platform differences on file path handling, e.g., the separator on windows is different from Unix. To proper handle file path, use `Z.IO.FileSystem.FilePath` (which is re-exported from `Z.IO.FileSystem`), for example, instead of manually connecting file path like:
+{:/}
+
+我们总是假设 `CBytes` 元素的内容是 UTF-8 编码的，但事实上并是不总如愿。不同平台间文件路径的处理方式也有一些差异，例如 Windows 与 UNIX 的分隔符就不相同。模块 `Z.IO.FileSystem.FilePath`（在模块 `Z.IO.FileSystem` 中被重导出）处理了这些问题。例如，比起像这样手动拼接文件路径（错误的做法）：
 
 ```haskell
 let p = "foo" <> "/" <> "bar"
 ```
+{::comment}
 You should always use functions from the library
+{:/}
 
+应该使用函数：
+
+{::comment}
 ```haskell
 import qualified Z.IO.FileSystem as FS
 
 let p = "foo" `FS.join` "bar"
 -- "foo" `FS.join` "../bar" will yield "bar" instead of "foo/../bar"
+```
+{:/}
+
+```haskell
+import qualified Z.IO.FileSystem as FS
+
+let p = "foo" `FS.join` "bar"
+-- "foo" `FS.join` "../bar" 将会得到 "bar" 而不是不符合预期的 "foo/../bar"
 ```
