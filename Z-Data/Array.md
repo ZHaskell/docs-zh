@@ -24,7 +24,7 @@ nav_order: 1
 {::comment}
 Unlike the ubiquitous linked list type `[a]`. In Haskell arrays doesn't have any built-in syntax support, or any other special compiler support expects some built-in primitive functions, which can be found in [ghc-prim](http://hackage.haskell.org/package/ghc-prim/docs/GHC-Prim.html):
 {:/}
-与普遍存在的链表类型`[a]`不同。在Haskell中，没有任何内置语法支持，或者任何其他特殊的编译器支持数组,除了一些内置的原生函数，可以在[ghc-prim](http://hackage.haskell.org/package /ghc-prim/docs/GHC-Prim.html)中找到
+与普遍存在的链表类型 `[a]` 不同。在Haskell中，没有任何内置语法支持，或者任何其他特殊的编译器支持数组,除了一些内置的原语，可以在 [ghc-prim](http://hackage.haskell.org/package/ghc-prim/docs/GHC-Prim.html)中找到
 
 ```haskell
 newArray# :: Int# -> a -> State# s -> (# State# s, MutableArray# s a #)
@@ -38,7 +38,7 @@ indexInt16Array# :: ByteArray# -> Int# -> Int#
 {::comment}
 It's hard to directly use those functions because they directly manipulate `State#` token, and they distinguish different array types: boxed `Array#`, `ByteArray#`, etc. The `#` after those types imply they are special primitive types, which will be discussed later.
 {:/}
-我们很难直接使用这些函数，因为它们直接操作`State#`令牌，并且它们区分不同的数组类型：如盒装的(boxed)`Array#`，`ByteArray#`等。这些类型后的`#`表示它们是特殊的原始类型，我们将稍后将进行讨论。
+我们很难直接使用这些函数，因为它们直接操作 `State#` 令牌，并且它们区分不同的数组类型：如盒装的(Boxed) `Array#`， `ByteArray#` 等。这些类型后的`#`表示它们是特殊的原始类型，我们将稍后将进行讨论。
 
 {::comment}
 In [Z-Data](https://hackage.haskell.org/package/Z-Data)，we provide type wrappers and typeclass to unified array operations:
@@ -278,13 +278,13 @@ Are represented as:
 During runtime the value `foo` is a reference, and all the operations, e.g. pattern match, go through dereferencing. Values like this are called *boxed* because it's a reference to a box, i.e. heap objects with [info-table](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/rts/storage/heap-objects#info-tables). The info-table contains many useful infomation about the box, such as how many words the boxed occupied, which constructor the box stand for, etc.
 {:/}
 
-在运行时，值`foo`是引用，且所有的操作，例如模式匹配，都需要进行引用求值(dereferencing)。这样的值称为*盒装的(boxed)*，因为它是对盒子的引用，即持有[info-table](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/rts/storage/heap-objects#info-tables)的堆上对象。信息表(info-table)包含有关该盒子的许多有用信息，例如，盒子所占用的字节数，盒子所对应的构造函数等。
+在运行时，值`foo`是引用，且所有的操作，例如模式匹配，都需要进行引用求值(Dereferencing)。这样的值称为*盒装的(Boxed)*，因为它是对盒子的引用，即持有[info-table](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/rts/storage/heap-objects#info-tables)的堆上对象。信息表(Info-table)包含有关该盒子的许多有用信息，例如，盒子所占用的字节数，盒子所对应的构造函数等。
 
 {::comment}
 The `3#` and `'a'#` above are haskell's non-pointer value, we call values like this *unboxed* values. Unboxed values don't have info-tables, so we really can't have them directly on heap: otherwise the GC would get confused when it scans them: without infomation from info-table, it can't decide how many bytes to copy. These values are usually belong to registers or other boxes: we generate machine code to manipulate them directly.
 {:/}
 
-上面用到的 `3#` 和 `'a'#` 是haskell的非指针值，我们称这些值为 *非盒装的((unboxed)* 值。非盒装的值没有信息表，因此我们不能将它们直接放在堆上：否则，GC在扫描它们时会感到困惑：如果没有来自信息表的信息，则无法确定要复制多少字节。这些值通常属于寄存器或其他盒子：我们生成机器码以直接对其进行操作。
+上面用到的 `3#` 和 `'a'#` 是haskell的非指针值，我们称这些值为 *非盒装的((Unboxed)* 值。非盒装的值没有信息表，因此我们不能将它们直接放在堆上：否则，GC在扫描它们时会感到困惑：如果没有来自信息表的信息，则无法确定要复制多少字节。这些值通常属于寄存器或其他盒子：我们生成机器码以直接对其进行操作。
 
 {::comment}
 ## Boxed array
@@ -323,7 +323,7 @@ Now let's consider GHC arrays, they're special heap objects provided by RTS. We 
                                                     | info-table* | ... |
                                                     +-------------+-----+
                                                       盒子, 可能是一个 thunk
-                                                      盒装的数组大部分操作作用于数组元素时都是懒加载的
+                                                      盒装的数组大部分操作作用于数组元素时都是惰性的
 ```
 
 {::comment}
@@ -358,7 +358,7 @@ data SmallArray a = SmallArray (SmallArray# a)
 A common pattern in Haskell is to turn `MutableArray` into an `Array` with freeze operations after creation complete, but the card-table's space is still there in case we thaw the array in place again. Generally speaking, under creation-freeze pattern, `MutableSmallArray` and `SmallArray` are more recommended since you won't keep mutable array on heap for too long.
 {:/}
 
-Haskell中的一种常见模式是在完成创建后通过冻结(freeze)操作将 `MutableArray` 转换为 `Array`，为了方便我们再次解冻(thaw)数组，card-table的空间仍然会被保留。一般来说，在创建冻结模式下，更建议使用`MutableSmallArray` 和 `SmallArray`，因为可变数组往往不会在堆上保留太长时间。
+Haskell中的一种常见模式是在完成创建后通过冻结(Freeze)操作将 `MutableArray` 转换为 `Array`，为了方便我们再次解冻(Thaw)数组，card-table的空间仍然会被保留。一般来说，在创建冻结模式下，更建议使用`MutableSmallArray` 和 `SmallArray`，因为可变数组往往不会在堆上保留太长时间。
 
 {::comment}
 ## Unboxed array
@@ -368,7 +368,7 @@ Haskell中的一种常见模式是在完成创建后通过冻结(freeze)操作�
 {::comment}
 `MutableByteArray#`, `ByteArray#` are GHC's unboxed array. They don't contain pointers, and their payload do not need to be traced during GC:
 {:/}
-`MutableByteArray#`, `ByteArray#` 是GHC的非盒装的数组(unboxed array)。它们不包含指针，并且在GC期间无需关注他们的负载(payload)：
+`MutableByteArray#`, `ByteArray#` 是GHC的非盒装的数组(Unboxed array)。它们不包含指针，并且在GC期间无需关注他们的负载(payload)：
 
 ```
 +-------------+--------------+-------------+---+-...-+---+---+
