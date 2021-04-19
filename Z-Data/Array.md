@@ -163,11 +163,11 @@ And we have following instances:
 
 {::comment}
 ```haskell
--- | Boxed array type, for holding haskell ADTs.
+-- | Boxed array type, for holding Haskell ADTs.
 instance Arr Array a where
     type MArr Array = MutableArray
     ...
--- | Boxed array type, for holding haskell ADTs, but doesn't carry a card table.
+-- | Boxed array type, for holding Haskell ADTs, but doesn't carry a card table.
 instance Arr SmallArray a where
     type MArr SmallArray = SmallMutableArray
     ...
@@ -183,11 +183,11 @@ instance PrimUnlifted a => Arr UnliftedArray a where
 {:/}
 
 ```haskell
--- | 盒装的数组类型, 持有haskell抽象数据类型.
+-- | 盒装的数组类型, 持有Haskell抽象数据类型.
 instance Arr Array a where
     type MArr Array = MutableArray
     ...
--- | 盒装的数组类型, 持有haskell抽象数据类型, 但没有卡片表.
+-- | 盒装的数组类型, 持有Haskell抽象数据类型, 但没有卡片表.
 instance Arr SmallArray a where
     type MArr SmallArray = SmallMutableArray
     ...
@@ -214,7 +214,7 @@ If you know how `IO` works in Haskell, `PrimMonad` simply means `ST` or `IO`. Bu
 # 盒装的，非盒装的
 
 {::comment}
-For many haskellers, using arrays may be the first time one wants to know what's the difference between boxed, unboxed types. It's important to spend some time explaining these buzzwords.
+For many Haskellers, using arrays may be the first time one wants to know what's the difference between boxed, unboxed types. It's important to spend some time explaining these buzzwords.
 {:/}
 
 对于许多Haskell的使用者而言，使用数组可能是你第一次知道`boxed`和`unboxed`类型之间的区别是什么。花一些时间了解这些术语的意思是很重要的。
@@ -226,10 +226,10 @@ In other languages, you often have to distinguish *reference* and *value*. For e
 在其他语言中，你通常必须区分 *引用* 和 *值*。例如，在C中，指针是对其他对象的引用。从硬件的角度来看，指针是一个内存地址：你可以使用机器代码来表示它所指向的内存的引用。而其他非指针类型的值就不是一个内存地址了，它们的1-0排列表示了该类型的某个值。
 
 {::comment}
-In haskell almost every value you see is a pointer from C's perspective, i.e. a memory location point to a heap object, for example a data type like:
+In Haskell almost every value you see is a pointer from C's perspective, i.e. a memory location point to a heap object, for example a data type like:
 {:/}
 
-在haskell中，从C语言的角度来看几乎每个你所见到的的值都是一个指针，即指向堆对象的内存位置，例如，像这样的数据类型：
+在 Haskell 中，从C语言的角度来看几乎每个你所见到的的值都是一个指针，即指向堆对象的内存位置，例如，像这样的数据类型：
 
 ```haskell
 data Foo = Foo Int Char
@@ -281,10 +281,10 @@ During runtime the value `foo` is a reference, and all the operations, e.g. patt
 在运行时，值`foo`是引用，且所有的操作，例如模式匹配，都需要进行引用求值(Dereferencing)。这样的值称为*盒装的(Boxed)*，因为它是对盒子的引用，即持有[info-table](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/rts/storage/heap-objects#info-tables)的堆上对象。信息表(Info-table)包含有关该盒子的许多有用信息，例如，盒子所占用的字节数，盒子所对应的构造函数等。
 
 {::comment}
-The `3#` and `'a'#` above are haskell's non-pointer value, we call values like this *unboxed* values. Unboxed values don't have info-tables, so we really can't have them directly on heap: otherwise the GC would get confused when it scans them: without infomation from info-table, it can't decide how many bytes to copy. These values are usually belong to registers or other boxes: we generate machine code to manipulate them directly.
+The `3#` and `'a'#` above are Haskell's non-pointer value, we call values like this *unboxed* values. Unboxed values don't have info-tables, so we really can't have them directly on heap: otherwise the GC would get confused when it scans them: without infomation from info-table, it can't decide how many bytes to copy. These values are usually belong to registers or other boxes: we generate machine code to manipulate them directly.
 {:/}
 
-上面用到的 `3#` 和 `'a'#` 是haskell的非指针值，我们称这些值为 *非盒装的((Unboxed)* 值。非盒装的值没有信息表，因此我们不能将它们直接放在堆上：否则，GC在扫描它们时会感到困惑：如果没有来自信息表的信息，则无法确定要复制多少字节。这些值通常属于寄存器或其他盒子：我们生成机器码以直接对其进行操作。
+上面用到的 `3#` 和 `'a'#` 是Haskell的非指针值，我们称这些值为 *非盒装的((Unboxed)* 值。非盒装的值没有信息表，因此我们不能将它们直接放在堆上：否则，GC在扫描它们时会感到困惑：如果没有来自信息表的信息，则无法确定要复制多少字节。这些值通常属于寄存器或其他盒子：我们生成机器码以直接对其进行操作。
 
 {::comment}
 ## Boxed array
@@ -419,10 +419,10 @@ indexPrimArray :: Prim a => PrimArray a -> Int -> a
 
 
 {::comment}
-Another difference between types: unlifted and lifted, exists because in haskell we have non-strict evaluation mechanism, e.g. a value `1 + 2` may have a representation like:
+Another difference between types: unlifted and lifted, exists because in Haskell we have non-strict evaluation mechanism, e.g. a value `1 + 2` may have a representation like:
 {:/}
 
-类型之间的另一个区别是：非提升的和提升的，这是因为在haskell中，我们具有 non-strict evaluation 机制，例如值 `1 + 2` 可能具有以下表示形式：
+类型之间的另一个区别是：非提升的和提升的，这是因为在Haskell中，我们具有 non-strict evaluation 机制，例如值 `1 + 2` 可能具有以下表示形式：
 
 
 {::comment}
@@ -451,9 +451,9 @@ In Haskell `1 + 2` and `3` are both references, they can be used interchangeably
 在Haskell中，`1 + 2` 和 `3` 都是引用，它们可以互换使用：这两个指针都可以被以 `Int` 为参数的函数接受。这是通过 *entering* 堆对象来完成的。即执行 info-table 重的 entry code。构造函数的 entry code 仅仅只做返回一件事。对于 thunk ，代码将进行求值，并且通过写入前向指针(Forward pointer)并将 thunk box 修改为 indirection box ，上面的 `reserved` 字段正是用来保存求值结果的。
 
 {::comment}
-The evaluation may fail(diverged recursion, stackoverflow, etc.), so the pointer could potentially point to an undefined value, this kind of things are called *bottom* in haskell, written as `_|_`. The intuition for this name is that all the other evaluated values have certain meaning, but bottom doesn't, it sits lower in the spectrum of determinism, concreteness, usefulness ... whatever suits your mind. Hence comes the concept of `lifted` type, i.e. types which contain `bottom` values, or more formly, inhabited by `_|_`.
+The evaluation may fail(diverged recursion, stackoverflow, etc.), so the pointer could potentially point to an undefined value, this kind of things are called *bottom* in Haskell, written as `_|_`. The intuition for this name is that all the other evaluated values have certain meaning, but bottom doesn't, it sits lower in the spectrum of determinism, concreteness, usefulness ... whatever suits your mind. Hence comes the concept of `lifted` type, i.e. types which contain `bottom` values, or more formly, inhabited by `_|_`.
 {:/}
-求值过程可能会失败（发散递归，堆栈溢出等），因此指针可能指向未定义的值，这种情况在haskell中称为 *bottom*，写为 `_|_` 。之所以被称为 *bottom* ，是因为所有其他被求值的值都具有确定的语义，但 *bottom* 却没有，它在确定性，具体性，有用性等方面会比其他类型的值来说更差一些…… 因此，产生了 `lifted` 类型的概念，即包含 *bottom* 的值。
+求值过程可能会失败（发散递归，堆栈溢出等），因此指针可能指向未定义的值，这种情况在 Haskell 中称为 *bottom*，写为 `_|_` 。之所以被称为 *bottom* ，是因为所有其他被求值的值都具有确定的语义，但 *bottom* 却没有，它在确定性，具体性，有用性等方面会比其他类型的值来说更差一些…… 因此，产生了 `lifted` 类型的概念，即包含 *bottom* 的值。
 
 {::comment}
 As you expected, most of the boxed type can be inhabited by `_|_`, the thunk may explode and terminate your program, or call `error` or `undefined` in base. And most of the unboxed types are unlifted types. e.g. It's impossible that an `Int#` would stand for an undefined value, because all 1-0 arrangements would represent a `Int#`, or put it another way: there's no way we get a bottom from `Int#`, because it doesn't have an info-table, and we can't enter it.
@@ -466,9 +466,9 @@ But some boxed unlifted types do exist, e.g. `MutableArray#/Array#` are such typ
 但是确实存在一些盒装的非提升的类型，例如 `MutableArray#/Array#` 就是这样的类型，它们在堆上的表示里有一个 info-table 的指针，但是从来没有“进入”过。所有操纵他们的原语都不会“进入”他们的 entry code ，创建它们的唯一方法是通过 `newArray#`, `cloneArray#` 等。
 
 {::comment}
-To efficiently store boxed unlifted types, `Unlifted` class and `UnliftedArray` type are introduced similar to `Prim` and `PrimArray`, `UnliftedArray` store unlifted references instead of normal haskell ADTs. Comparing `Array Array`, `UnliftedArray Array` could remove a level of redirection, i.e. remove item's `Array` box and store `Array#` directly.
+To efficiently store boxed unlifted types, `Unlifted` class and `UnliftedArray` type are introduced similar to `Prim` and `PrimArray`, `UnliftedArray` store unlifted references instead of normal Haskell ADTs. Comparing `Array Array`, `UnliftedArray Array` could remove a level of redirection, i.e. remove item's `Array` box and store `Array#` directly.
 {:/}
-为了有效地存储盒装的非提升类型，引入了 `Unlifted` 类和 `UnliftedArray` 类型，类似于 `Prim`  和 `PrimArray` ，`UnliftedArray` 存储非提升的引用而不是常规的 haskell ADT。与 `Array Array` 相比, `UnliftedArray Array` 可以去掉一层重定向，即移除 `Array` 盒子并直接存储 `Array#` 类型。
+为了有效地存储盒装的非提升类型，引入了 `Unlifted` 类和 `UnliftedArray` 类型，类似于 `Prim`  和 `PrimArray` ，`UnliftedArray` 存储非提升的引用而不是常规的 Haskell ADT。与 `Array Array` 相比, `UnliftedArray Array` 可以去掉一层重定向，即移除 `Array` 盒子并直接存储 `Array#` 类型。
 
 {::comment}
 # More on arrays
