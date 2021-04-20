@@ -33,7 +33,9 @@ Note benchmarks only record certain aspect of the code and the setup environment
 
 # 处理 JSON 的性能表现
 
+{::comment}
 This benchmark compared [JSON module in Z-Data](https://hackage.haskell.org/package/Z-Data/docs/Z-Data-JSON.html) with [aeson](https://hackage.haskell.org/package/aeson), a widely used JSON package on hackage. See our analysis in [this blog post](/performance/2021/02/01/High-performance-JSON-codec.html).
+{:/}
 
 以下对 [Z-Data 中的 JSON 模块](https://hackage.haskell.org/package/Z-Data/docs/Z-Data-JSON.html)和 Hackage 上被普遍使用的 JSON 处理软件包 [aeson](https://hackage.haskell.org/package/aeson)进行了基准性能分析。我们的分析结果可以参见这篇[博客](/performance/2021/02/01/High-performance-JSON-codec.html)。
 
