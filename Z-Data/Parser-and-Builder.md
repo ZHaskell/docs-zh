@@ -1,7 +1,7 @@
 ---
 layout: default
 parent: Z-Data
-title: 解析器和创建器
+title: Parser 和 Builder
 nav_order: 3
 ---
 
@@ -90,7 +90,7 @@ msgStr = do
 Comparing to `parsec` or `megaparsec`, `Parser` in Z provides limited error reporting, and do not support using as a monad transformer. But provides an instance of `PrimMonad`, which allows some limited effects, such as mutable variables and array operations. 
 {:/}
 
-与 `parsec` 或 `megaparsec` 相比，Z中的 `Parser` 提供有限的错误报告，并且不支持将其用作 monad 转换器。 但是提供了 `PrimMonad` 的实例，该实例允许一些有限的副作用，例如可变变量和数组操作。
+与 `parsec` 或 `megaparsec` 不同，Z中的 `Parser` 提供有限的错误报告，并且不支持将其用作 monad 转换器。 但是提供了 `PrimMonad` 的实例，该实例允许一些有限的副作用，例如可变量和数组的操作。
 
 {::comment}
 ## Auto Backtracked Alternative
@@ -124,7 +124,7 @@ or `peekMaybe` if the syntax or protocol can be parsed as LL(1) grammer since it
 The `Builder` from `Z.Data.Builder` is the reverse process of parsing, i.e. writing Haskell data types to `Bytes`, aka *Writer* monad. The usage is very similiar to `Parser`:
 {:/}
 
-`Z.Data.Builder` 中的 `Builder` 是解析过程的逆过程，即将Haskell数据类型写入 `Bytes` ，也就是 *Writer* monad。用法非常类似于 `Parser` ：
+`Z.Data.Builder` 中的 `Builder` 是解析过程的逆过程，即将Haskell数据类型写入 `Bytes` ，也就是 *Writer* monad 。用法非常类似于 `Parser` ：
 
 ```haskell
 import qualified Z.Data.Builder as B
