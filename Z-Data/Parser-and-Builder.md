@@ -1,7 +1,7 @@
 ---
 layout: default
 parent: Z-Data
-title: 解析器(Parser)和创建器(Builder)
+title: 解析器和创建器
 nav_order: 3
 ---
 
@@ -189,7 +189,11 @@ Note that we directly use `Unalign a, Unalign b => Unalign (a, b)` instance to w
 
 请注意，我们直接使用 `Unalign a, Unalign b => Unalign (a, b)` 实例在一行内写若干个 primitive types。 `Unalign` 类提供了基本的读写接口，可以从 raw bytes 读取 primitive types，也可以将 primitive types 写入 raw bytes。（raw bytes 的偏移量未对齐）
 
+{::comment}
 ## Text formatting with `Builder`
+{:/}
+## `Builder` 的文本格式化
+
 
 {::comment}
 Different from other standard libraries which usually provide `printf` or similar, in Z directly using `Builder` to format text is recommended:
@@ -251,4 +255,4 @@ Monadic `Builder` 的优势在于，您可以重用 `Control.Monad` 中的所有
 + `\NUL` 将被写为 `\xC0\x80`。
 + `\xD800` ~ `\xDFFF` 将被编码为三个字节，作为普通的UTF-8的替代。
 
-只要您不写 `\0` or `\55296` ~ `\57343`, 就可以在`unsafeBuildText`中放心的使用字符串字面值。
+只要您不写 `\0` or `\55296` ~ `\57343`, 就可以在 `unsafeBuildText` 中放心的使用字符串字面值。
