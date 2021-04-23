@@ -1,7 +1,7 @@
 ---
 layout: default
 parent: Z-Data
-title: Parser 和 Builder
+title: Parser 与 Builder
 nav_order: 3
 ---
 
@@ -14,12 +14,12 @@ nav_order: 3
 1. TOC
 {:toc}
 
-# Parser Monad
+# Parser 单子（Parser Monad）
 
 {::comment}
 The `Parser` from `Z.Data.Parser` is designed for high performance resumable binary parsing and simple textual parsing, such as network protocols, JSON, etc. Write a parser by using basic parsers from `Z.Data.Parser` such as `takeWhile`, `int`, etc.
 {:/}
-`Z.Data.Parser` 中的 `Parser` 用于高性能、可恢复的二进制解析和简单的文本解析，例如网络协议，JSON等。可以使用 `Z.Data.Parser` 中的基本解析函数编写解析器，例如 `takeWhile`，`int` 等。
+`Z.Data.Parser` 中的 `Parser` 用于高性能、可恢复的二进制解析和简单的文本解析，例如网络协议、JSON 等。可以使用 `Z.Data.Parser` 中基本的解析函数例如 `takeWhile`、`int` 等编写解析器。
 
 
 ```haskell
@@ -62,7 +62,7 @@ Success Date {year = 2020, month = 5, day = 5}
 {::comment}
 Binary protocol can use `decodePrim/decodePrimLE/decodePrimBE` with `TypeApplications` extension, let's say you want to implement a [MessagePack str format](https://github.com/msgpack/msgpack/blob/master/spec.md#str-format-family) parser:
 {:/}
-二进制协议可以使用带有 `TypeApplications` 扩展名的 `decodePrim / decodePrimLE / decodePrimBE`，假设您要实现一个 [MessagePack str format](https://github.com/msgpack/msgpack/blob/master/spec.md#str-format-family) 解析器:
+二进制协议可以使用带有 `TypeApplications` 扩展的 `decodePrim / decodePrimLE / decodePrimBE`，假设您要实现一个 [MessagePack str format](https://github.com/msgpack/msgpack/blob/master/spec.md#str-format-family) 解析器:
 
 ```haskell
 import           Data.Bits
@@ -90,12 +90,12 @@ msgStr = do
 Comparing to `parsec` or `megaparsec`, `Parser` in Z provides limited error reporting, and do not support using as a monad transformer. But provides an instance of `PrimMonad`, which allows some limited effects, such as mutable variables and array operations. 
 {:/}
 
-与 `parsec` 或 `megaparsec` 不同，Z中的 `Parser` 提供有限的错误报告，并且不支持将其用作 monad 转换器。 但是提供了 `PrimMonad` 的实例，该实例允许一些有限的副作用，例如可变量和数组的操作。
+与 `parsec` 或 `megaparsec` 不同，Z中的 `Parser` 提供有限的错误报告且不支持将其用作单子转换器（Monad Transformer）。 但是提供了 `PrimMonad` 的实例，该实例允许一些有限的副作用，例如可变量和数组的操作。
 
 {::comment}
 ## Auto Backtracked Alternative
 {:/}
-## 自动回溯的 Alternative
+## 使用 `Alternative` 自动回溯
 
 
 {::comment}
@@ -103,7 +103,7 @@ Similar to `attoparsec`, `Parser` in Z always backtrack when used with `<|>` (`A
 {:/}
 
 
-与 `attoparsec` 相似，Z中的 Parser 与 `<|>` （ `Alternative` 实例）一起使用时总是回溯，这意味着失败的分支在不做任何特殊操作的情况下不会消费任何输入：
+与 `attoparsec` 相似，Z中的 Parser 与 `<|>` （ `Alternative` 实例的函数）一起使用时总是回溯，这意味着失败的分支在不做任何特殊操作的情况下不会消费任何输入：
 
 ```haskell
 import Control.Applicative
@@ -118,13 +118,13 @@ or `peekMaybe` if the syntax or protocol can be parsed as LL(1) grammer since it
 
 在上面的代码中，如果任何 parser 失败，则从输入的开头重试下一个 parser。虽然并非总是需要回溯，还是建议使用 `peek`。或者在语法或协议可以被解析为 LL(1) 语法的时候使用`peekMaybe`， 因为它比回溯更快。
 
-# Builder Monad
+# Builder 单子（Builder Monad）
 
 {::comment}
 The `Builder` from `Z.Data.Builder` is the reverse process of parsing, i.e. writing Haskell data types to `Bytes`, aka *Writer* monad. The usage is very similiar to `Parser`:
 {:/}
 
-`Z.Data.Builder` 中的 `Builder` 是解析过程的逆过程，即将Haskell数据类型写入 `Bytes` ，也就是 *Writer* monad 。用法非常类似于 `Parser` ：
+`Z.Data.Builder` 中的 `Builder` 是解析过程的逆过程，即将 Haskell 数据类型写入 `Bytes` ，也就是 *Writer* 单子。用法非常类似于 `Parser`：
 
 ```haskell
 import qualified Z.Data.Builder as B
@@ -148,7 +148,7 @@ dataBuilder (Date y m d) = do
 Underhood a `Builder` records a buffer writing function, thus can be composed quickly. Use `build/buildText` to run a `Builder`, which produces `Bytes` and `Text` respectively:
 {:/}
 
-`Builder` 内部记录了一个 buffer writing 函数，因此可以快速写出。使用 `build/buildText` 运行一个 `Builder` ，分别产生 `Bytes` 和 `Text` ：
+类型 `Builder` 内部记录了一个 buffer writing 函数，因此可以快速写出。使用 `build/buildText` 运行一个 `Builder` ，分别产生 `Bytes` 和 `Text` ：
 
 ```haskell
 > B.build (dataBuilder $ Date 2020 11 1)
@@ -192,7 +192,7 @@ Note that we directly use `Unalign a, Unalign b => Unalign (a, b)` instance to w
 {::comment}
 ## Text formatting with `Builder`
 {:/}
-## `Builder` 的文本格式化
+## 利用 `Builder` 处理文本格式化
 
 
 {::comment}
