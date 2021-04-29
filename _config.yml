@@ -16,7 +16,7 @@
 title: Z.Haskell
 email: winterland1989@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
-    Z.Haskell 中文站.
+  Z.Haskell 中文站.
 baseurl: "/" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 github_username: winterland1989
@@ -35,7 +35,7 @@ aux_links:
 # Footer content
 # appears at the bottom of every page's main content
 # Note: The footer_content option is deprecated and will be removed in a future major release. Please use `_includes/footer_custom.html` for more robust markup / liquid-based content.
-footer_content: "<p><a href=\"#top\" id=\"back-to-top\"> 回到页面顶部 </a></p>Copyright &copy; 2017-2020 Z.Haskell contributors. 以 <a href=\"https://github.com/ZHaskell/docs-zh/blob/master/LICENSE\">BSD 协议</a>分发。"
+footer_content: '<p><a href="#top" id="back-to-top"> 回到页面顶部 </a></p>Copyright &copy; 2017-2020 Z.Haskell contributors. 以 <a href="https://github.com/ZHaskell/docs-zh/blob/master/LICENSE">BSD 协议</a>分发。'
 
 # Footer last edited timestamp
 last_edit_timestamp: true # show or hide edit time - page must have `last_modified_date` defined in the frontmatter
@@ -44,7 +44,7 @@ last_edit_time_format: "%b %e %Y at %I:%M %p" # uses ruby's time format: https:/
 # Footer "Edit this page on GitHub" link text
 gh_edit_link: true # show or hide edit this page link
 gh_edit_link_text: "在 GitHub 上编辑此页"
-gh_edit_repository: "https://github.com/Zhaskell/docs-zh" # the github URL for your repo
+gh_edit_repository: "https://github.com/ZHaskell/docs-zh" # the github URL for your repo
 gh_edit_branch: "master" # the branch that your docs is served from
 gh_edit_source: "" # the source that your files originate from
 gh_edit_view_mode: "tree" # "tree" or "edit" if you want the user to jump into the editor immediately

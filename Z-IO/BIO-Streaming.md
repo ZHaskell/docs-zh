@@ -87,7 +87,7 @@ fooBIO callback maybeFoo = do
 
 <!-- Let's take zlib's `z_streamp` as an example:
 
-+ A `z_streamp` struct could be `push`ed with an input chunk using `inflate`, possibly producing an output chunk. 
++ A `z_streamp` struct could be `push`ed with an input chunk using `inflate`, possibly producing an output chunk.
 + If input reached EOF, use `inflateEnd` to `pull` the trailing compressed bytes buffered inside `z_streamp` struct.
 
 The `Z.IO.BIO` module provides various `BIO` node types, from UTF-8 decoder to counter node. Most of them are stateful, so you should create a new node each time. -->
@@ -171,7 +171,7 @@ BIO类型可以通过 `(.)` 组合，即函数组合。这种组合的类型产�
 + 如果您将 `BIO a b` 和 `Sink b` 组合， 则将获得 `Sink a` 类型
 
 <!-- So let's say you want to count the line number of a file, you could use `BIO`: -->
-假设您要计算文件的行数，可以使用`BIO`
+假设您要计算文件的行数，可以使用 `BIO`
 
 ```haskell
 import Z.IO
@@ -203,7 +203,7 @@ runBIO_ bio = bio discard EOF
 ```
 
 <!-- Another example from the [introduce BIO blog post](https://z.haskell.world/design/2021/04/20/introduce-BIO-a-simple-streaming-abstraction.html): -->
-[介绍BIO的博客](https://z.haskell.world/design/2021/04/20/introduce-BIO-a-simple-streaming-abstraction.html) 中有另一个示例：
+[介绍BIO](https://z.haskell.world/design/2021/04/20/introduce-BIO-a-simple-streaming-abstraction.html) 的博客中有另一个示例：
 
 ```haskell
 import Z.Data.CBytes    (CBytes)
