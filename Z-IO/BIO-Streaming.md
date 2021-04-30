@@ -38,7 +38,7 @@ type BIO inp out = (Maybe out -> IO ()) -> Maybe inp -> IO ()
 
 <!-- Conceptually a `BIO` is a box doing transformation on data callbacks: -->
 
-理论上来说，`BIO` 可以看成是在数据回调时执行数据转换的盒子：
+概念上来说，`BIO` 可以看成是针对回调进行变换的盒子：
 
 <!-- ```haskell
 -- A pattern synonym for more meaningful pattern match
@@ -57,9 +57,8 @@ fooBIO callback maybeFoo = do
             callback (Just ...)
             ...
         EOF ->
-            ... Nothing input indicate EOF
-            .. you should pass EOF to callback to indicate current
-            .. node also reaches its EOF
+            ... you should pass EOF to callback to indicate current
+            ... node also reaches its EOF
             callback EOF
 ``` -->
 ```haskell
@@ -72,32 +71,82 @@ fooBIO callback maybeFoo = do
     ... use callback to pass output data
     case maybeFoo of
         Just foo ->
-            ... you can send result to downstream by pass Just values
-            ... to callback, and you can call callback multiple time.
+            ... 你可以通过给 callback 传递 Just 值向下游写入
+            ... 你可以调用 callback 多次
             callback (Just ...)
             ...
             callback (Just ...)
             ...
         EOF ->
-            ... Nothing input indicate EOF
-            .. you should pass EOF to callback to indicate current
-            .. node also reaches its EOF
+            ... 你应该通过给 callback 传递 EOF 来告知下游 EOF
             callback EOF
 ```
 
-<!-- Let's take zlib's `z_streamp` as an example:
+<!-- `BIO` type have two params:
 
-+ A `z_streamp` struct could be `push`ed with an input chunk using `inflate`, possibly producing an output chunk.
-+ If input reached EOF, use `inflateEnd` to `pull` the trailing compressed bytes buffered inside `z_streamp` struct.
++ A `callback :: Maybe out -> IO ()`(often written as `k`) which get called when to write downstream:
+    + A `Just out` value is an item passed to downstream.
+    + A `EOF` notified downstream EOF.
++ A `Maybe inp` value which comes from upstream:
+    + A `Just inp` value is an item from upstream.
+    + A `EOF` notified upstream EOF.
 
-The `Z.IO.BIO` module provides various `BIO` node types, from UTF-8 decoder to counter node. Most of them are stateful, so you should create a new node each time. -->
+Let's take zlib's `z_streamp` as an example to implement a compressing BIO node -->
 
-让我们用 zlib's `z_streamp` 举一个例子:
+`BIO` 是一个接受两个参数的函数：
 
-+ 一个 z_streamp 结构可以使用 inflate 推入一个输入块，可能会产生一个输出块。
-+ 如果输入达到EOF，可以使用 inflateEnd 来拉出 z_streamp 结构中缓冲的尾部压缩块。
++ 一个 `callback :: Maybe out -> IO ()`(也经常被记作 `k`)，会被再向下游写入的时候被调用：
+    + `Just out` 向下游写入 out。
+    + `EOF` 告诉下游 EOF。
++ 一个从上游传过来的 `Maybe inp`：
+    + `Just inp` 是一个来自上游的 `inp` 值。
+    + `EOF` 意味着上游结束了。
 
-`Z.IO.BIO` 模块提供了从 UTF-8 解码器到计数器等各种 `BIO` 节点类型。它们中的大多数都是有状态的，您应该每次都创建一个新节点去使用他们。
+让我们用 zlib's `z_streamp` 举一个实现 BIO 节点的例子:
+
+<!-- ```haskell
+compressBIO :: ZStream -> BIO V.Bytes V.Bytes
+compressBIO zs = \ callback mbs ->
+    case mbs of
+        Just bs -> do
+            -- feed input chunk to ZStream
+            set_avail_in zs bs (V.length bs)
+            let loop = do
+                    oavail :: CUInt <- withCPtr zs $ \ ps -> do
+                        -- perform deflate and peek output buffer remaining
+                        throwZlibIfMinus_ (deflate ps (#const Z_NO_FLUSH))
+                        (#peek struct z_stream_s, avail_out) ps
+                    when (oavail == 0) $ do
+                        -- when output buffer is full,
+                        -- freeze chunk and call the callback
+                        oarr <- A.unsafeFreezeArr =<< readIORef bufRef
+                        callback (Just (V.PrimVector oarr 0 bufSiz))
+                        newOutBuffer           
+                        loop
+            loop
+        _ -> ... similar to above, with no input chunk and Z_FINISH flag
+``` -->
+```haskell
+compressBIO :: ZStream -> BIO V.Bytes V.Bytes
+compressBIO zs = \ callback mbs ->
+    case mbs of
+        Just bs -> do
+            -- 给 ZStream 结构体设置输入
+            set_avail_in zs bs (V.length bs)
+            let loop = do
+                    oavail :: CUInt <- withCPtr zs $ \ ps -> do
+                        -- 执行压缩操作 deflate，并查询输出 buffer 的剩余空间
+                        throwZlibIfMinus_ (deflate ps (#const Z_NO_FLUSH))
+                        (#peek struct z_stream_s, avail_out) ps
+                    when (oavail == 0) $ do
+                        -- 当输出 buffer 满时，冻结 chunk 并传递给下游 callback
+                        oarr <- A.unsafeFreezeArr =<< readIORef bufRef
+                        callback (Just (V.PrimVector oarr 0 bufSiz))
+                        newOutBuffer           
+                        loop
+            loop
+        _ -> ... 和上面类似，只是没有了输入，所以要给 deflate 操作传递 Z_FINISH 标志
+```
 
 <!-- # Source and Sink types
 
@@ -132,10 +181,9 @@ type Source a = BIO Void a
 type Sink a = BIO a Void
 ```
 
+<!-- Because `Void` type doesn't have constructors, one should ignore the `Maybe Void` param when defining a `Source`. For example, a `BIO` node sourcing chunks from `BufferedInput` can be implemented like this: -->
 
-Because `Void` type doesn't have constructors, thus `push` values other than `Nothing` to `Source` is impossible, one should ignore the `Maybe Void` param when defining a `Source`. For example, a `BIO` node sourcing chunks from `BufferedInput` can be implemented like this:
-
-由于 `Void` 类型没有构造函数，因此不可能往 `Source` 中 `push` 除了 `Nothing` 之外的值，因此在定义 `Source` 时应该忽略 `Maybe Void` 参数。 比如，一个从 `BufferedInput` 中读取数据流的 `BIO` 节点可以这样实现：
+由于 `Void` 类型没有构造函数，因此在定义 `Source` 时应该忽略 `Maybe Void` 参数。 比如，一个从 `BufferedInput` 中读取数据流的 `BIO` 节点可以这样实现：
 
 
 ```haskell
@@ -146,9 +194,9 @@ sourceFromBuffered i = \ k _ ->
     in loop
 ```
 
-<!-- For `type Sink a = BIO a Void`, the callback type is `Maybe Void -> IO ()`, which means you can only pass `Nothing` to the callback, the convention here is to only call callback once with `Nothing` on EOF: -->
+<!-- For `type Sink a = BIO a Void`, the callback type is `Maybe Void -> IO ()`, which means you can only pass `EOF` to the callback, the convention here is to only call callback when EOF: -->
 
-对于 `type Sink a = BIO a Void` ，回调类型为 `Maybe Void -> IO ()` ，这意味着你只能将 `Nothing` 传递给回调。这里的约定是只有在遇到 EOF 的时候用 `Nothing` 调用一次回调函数：
+对于 `type Sink a = BIO a Void` ，回调类型为 `Maybe Void -> IO ()` ，这意味着你只能将 `EOF` 传递给回调。这里的约定是只有在遇到 EOF 的时候调用一次回调函数：
 
 ```haskell
 -- | The `BufferedOutput` device will get flushed only on EOF.
@@ -203,7 +251,7 @@ runBIO_ bio = bio discard EOF
 ```
 
 <!-- Another example from the [introduce BIO blog post](https://z.haskell.world/design/2021/04/20/introduce-BIO-a-simple-streaming-abstraction.html): -->
-[介绍BIO](https://z.haskell.world/design/2021/04/20/introduce-BIO-a-simple-streaming-abstraction.html) 的博客中有另一个示例：
+[介绍BIO](https://z.haskell.world/design/2021/04/20/introduce-BIO-a-simple-streaming-abstraction.html) 的博客中的另一个示例：
 
 ```haskell
 import Z.Data.CBytes    (CBytes)
