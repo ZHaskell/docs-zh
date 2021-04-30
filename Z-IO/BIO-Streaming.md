@@ -157,12 +157,12 @@ Now let's consider the following devices:
 
 We can have the definitions for data `Source` and `Sink` by using `Void` from `Data.Void`: -->
 
-# 源和汇聚 类型
+# Source 和 Sink 类型
 
 现在让我们考虑以下设备：
 
-+ 一个源类型，不接受任何输入，但是可以在遇到 EOF 之前读取。
-+ 一个汇聚类型，仅执行写入操作而不会产生任何有意义的结果。
++ 一个 Source 类型，不接受任何输入，但是可以在遇到 EOF 之前读取。
++ 一个 Sink 类型，仅执行写入操作而不会产生任何有意义的结果。
 
 我们可以使用 `Data.Void` 中的 `Void` 来定义 `Source` 和 `Sink` 的类型：
 
@@ -175,9 +175,9 @@ type Sink a = BIO a Void
 ``` -->
 
 ```haskell
--- 源类型不需要输入
+-- Source 类型不需要输入
 type Source a = BIO Void a
--- 汇聚类型不需要输出
+-- Sink 类型不需要输出
 type Sink a = BIO a Void
 ```
 
