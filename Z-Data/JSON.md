@@ -27,11 +27,13 @@ Using `Z.Data.JSON` module to get human readable serialization/deserialization. 
 * `fromValue` to convert `Value` to Haskell values.
 * `toValue` to convert Haskell values to `Value`.
 * `encodeJSON` to directly write Haskell value into JSON bytes.
+
 {:/}
 
 * 使用 `fromValue` 函数将类型为 `Value` 的元素转换为对应的 Haskell 值
 * 使用 `toValue` 函数将 Haskell 值转换为对应的类型为 `Value` 的元素
 * 使用 `encodeJSON` 将 Haskell 值转换为对应的 JSON 字节表示
+
 {::comment}
 ```haskell
 class JSON a where
@@ -42,6 +44,7 @@ class JSON a where
   ...
 ```
 {:/}
+
 ```haskell
 class JSON a where
   ...
@@ -96,39 +99,29 @@ The `Generic` based instances convert Haskell data with following rules:
 {::comment}
 * Constructors without payloads are encoded as JSON String, `data T = A | B` are encoded as `"A"` or `"B"`.
 * Single constructor are ingored if there're payloads, `data T = T ...`,  `T` is ingored:
-```haskell
-data Singl = Singl Int String
-  deriving (Generic)
-  deriving anyclass (JSON)
--- Singl 42 "42"
--- [42,\"42\"]
-```
-* Records are encoded as JSON object. `data T = T{k1 :: .., k2 :: ..}` are encoded as `{"k1":...,"k2":...}`.
-* Plain product are encoded as JSON array. `data T = T t1 t2` are encoded as "[x1,x2]".
-* Single field plain product are encoded as it is, i.e. `data T = T t` are encoded as "t" just like its payload.
+  * Records are encoded as JSON object. `data T = T{k1 :: .., k2 :: ..}` are encoded as `{"k1":...,"k2":...}`.
+  * Plain product are encoded as JSON array. `data T = T t1 t2` are encoded as "[x1,x2]".
+  * Single field plain product are encoded as it is, i.e. `data T = T t` are encoded as "t" just like its payload.
 * Multiple constructors are convert to single key JSON object if there're payloads:
-* Records are encoded as JSON object like above. `data T = A | B {k1 :: .., k2 :: ..}` are encoded as
+  * Records are encoded as JSON object like above. `data T = A | B {k1 :: .., k2 :: ..}` are encoded as
     `{"B":{"k1":...,"k2":...}}` in `B .. ..` case, or `"A"` in `A` case.
-* Plain product are similar to above, wrappered by an outer single-key object layer marking which constructor.
+  * Products inside a sum type are similar to above, wrapped by an outer single-key object layer marking which constructor used during data construction.
 {:/}
 
 * 没有载荷（零元）的构造器被直接编码为 JSON 字符串，例如 `data T = A | B` 被编码为 `"A"` or `"B"`。
-* 单构造器的类型在编码时会省略构造器本身（构造器有载荷）：
-```haskell
-data Singl = Singl Int String
-  deriving (Generic)
-  deriving anyclass (JSON)
--- Singl 42 "42"
--- [42,\"42\"]
-```
-* 记录（Record）被编码为一个 JSON 对象，例如 `data T = T{k1 :: .., k2 :: ..}` 被编码为 `{"k1":...,"k2":...}`。
-* 普通的积类型被编码成 JSON 数组，如 `data T = T t1 t2` 被编码成 `"[x1,x2]"`。
-* 单字段的积类型将直接编码载荷，如  `data T = T t` 直接被编码为 `"x"`。
-* 如果有有效载荷，多个构造器将转换为单键 JSON 对象。
-* 如上情况可以组合，如 `data T = A | B {k1 :: .., k2 :: ..}` 会被编码成 `"A"` 或 `{"B":{"k1":...,"k2":...}}`，取决于元素本身的构造。
-* 普通的积类型也适用于如上，在外层以一个单键对象包装以表明元素本身的构造。
+* 单构造器的类型在编码时会省略构造器本身（如果构造器有载荷）：
+    * 记录（Record）被编码为一个 JSON 对象，例如 `data T = T{k1 :: .., k2 :: ..}` 被编码为 `{"k1":...,"k2":...}`。
+    * 普通的积类型被编码成 JSON 数组，如 `data T = T t1 t2` 被编码成 `"[x1,x2]"`。
+    * 单字段的积类型将直接编码载荷，如  `data T = T t` 直接被编码为 `"x"`。
+* 多构造器类型将转换为单键 JSON 对象（如果构造器有载荷）:
+    * 如上情况可以组合，如 `data T = A | B {k1 :: .., k2 :: ..}` 会被编码成 `"A"` 或 `{"B":{"k1":...,"k2":...}}`，取决于元素本身的构造。
+    * 普通的和类型也适用如上，但在外层以一个单键对象包装以表明元素本身的构造。
 
+{::comment}
 These rules apply to user defined ADTs, but some built-in instances have different behaviours, namely:
+{:/}
+
+这些规则适用于用户定义的代数数据类型（ADT），但一些内建的实例会有不同于上文的表现，例如：
 
 * `Maybe a` are encoded as JSON `null` in `Nothing` case, or directly encoded to its payload in `Just` case.
 * `[a]` are encoded to JSON array, `[Char]` are encoded into JSON string.
