@@ -5,20 +5,57 @@ title: JSON
 nav_order: 4
 ---
 
+{::comment}
 ## Table of contents
+{:/}
+
+## 目录
+
 {: .no_toc .text-delta }
 
 1. TOC
 {:toc}
 
+{::comment}
 Using `Z.Data.JSON` module to get human readable serialization/deserialization. The easiest way to use the library is to define target data type, deriving
 `Generic` and `JSON` instances, which provides:
+{:/}
 
+可以使用 `Z.Data.JSON` 模块以获得具有可读性的序列化 / 反序列化结果。要使用函数库中的相关机能，最简单的方法是定义好目标数据类型，派生出 `Generic` 与 `JSON` 实例，可以利用它们来处理如下：
+
+{::comment}
 * `fromValue` to convert `Value` to Haskell values.
 * `toValue` to convert Haskell values to `Value`.
 * `encodeJSON` to directly write Haskell value into JSON bytes.
+{:/}
 
+* 使用 `fromValue` 函数将类型为 `Value` 的元素转换为对应的 Haskell 值
+* 使用 `toValue` 函数将 Haskell 值转换为对应的类型为 `Value` 的元素
+* 使用 `encodeJSON` 将 Haskell 值转换为对应的 JSON 字节表示
+{::comment}
+```haskell
+class JSON a where
+  ...
+  toValue :: a -> Value
+  fromValue :: Value -> Converter a
+  encodeJSON :: a -> B.Builder () -- `Z.Data.Builder` as `B`
+  ...
+```
+{:/}
+```haskell
+class JSON a where
+  ...
+  toValue :: a -> Value
+  fromValue :: Value -> Converter a
+  encodeJSON :: a -> B.Builder () -- 将 `Z.Data.Builder` 以 `B` 导入
+  ...
+```
+
+{::comment}
 For example,
+{:/}
+
+一个使用用例是：
 
 ```haskell
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass, DerivingStrategies #-}
@@ -33,7 +70,11 @@ data Person = Person {name :: T.Text, age :: Int}
     deriving anyclass (JSON.JSON)
 ```
 
+{::comment}
 We can now encode & decode JSON like this:
+{:/}
+
+可以以如下方式进行 JSON 的编码与解码：
 
 ```haskell
 > JSON.toValue (Person{ name="Alice", age=16 })
@@ -46,10 +87,22 @@ Object [("name",String "Alice"),("age",Number 16.0)]
 Right (Person {age = 16, name = "Alice"})
 ```
 
+{::comment}
 The `Generic` based instances convert Haskell data with following rules:
+{:/}
 
+与 `Z.Data.JSON` 一同使用时，作为 `Generic` 实例的 Haskell 数据类型满足如下规则：
+
+{::comment}
 * Constructors without payloads are encoded as JSON String, `data T = A | B` are encoded as `"A"` or `"B"`.
 * Single constructor are ingored if there're payloads, `data T = T ...`,  `T` is ingored:
+```haskell
+data Singl = Singl Int String
+  deriving (Generic)
+  deriving anyclass (JSON)
+-- Singl 42 "42"
+-- [42,\"42\"]
+```
 * Records are encoded as JSON object. `data T = T{k1 :: .., k2 :: ..}` are encoded as `{"k1":...,"k2":...}`.
 * Plain product are encoded as JSON array. `data T = T t1 t2` are encoded as "[x1,x2]".
 * Single field plain product are encoded as it is, i.e. `data T = T t` are encoded as "t" just like its payload.
@@ -57,6 +110,23 @@ The `Generic` based instances convert Haskell data with following rules:
 * Records are encoded as JSON object like above. `data T = A | B {k1 :: .., k2 :: ..}` are encoded as
     `{"B":{"k1":...,"k2":...}}` in `B .. ..` case, or `"A"` in `A` case.
 * Plain product are similar to above, wrappered by an outer single-key object layer marking which constructor.
+{:/}
+
+* 没有载荷（零元）的构造器被直接编码为 JSON 字符串，例如 `data T = A | B` 被编码为 `"A"` or `"B"`。
+* 单构造器的类型在编码时会省略构造器本身（构造器有载荷）：
+```haskell
+data Singl = Singl Int String
+  deriving (Generic)
+  deriving anyclass (JSON)
+-- Singl 42 "42"
+-- [42,\"42\"]
+```
+* 记录（Record）被编码为一个 JSON 对象，例如 `data T = T{k1 :: .., k2 :: ..}` 被编码为 `{"k1":...,"k2":...}`。
+* 普通的积类型被编码成 JSON 数组，如 `data T = T t1 t2` 被编码成 `"[x1,x2]"`。
+* 单字段的积类型将直接编码载荷，如  `data T = T t` 直接被编码为 `"x"`。
+* 如果有有效载荷，多个构造器将转换为单键 JSON 对象。
+* 如上情况可以组合，如 `data T = A | B {k1 :: .., k2 :: ..}` 会被编码成 `"A"` 或 `{"B":{"k1":...,"k2":...}}`，取决于元素本身的构造。
+* 普通的积类型也适用于如上，在外层以一个单键对象包装以表明元素本身的构造。
 
 These rules apply to user defined ADTs, but some built-in instances have different behaviours, namely:
 
