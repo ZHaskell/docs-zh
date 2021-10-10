@@ -60,7 +60,7 @@ macOS（搭载 Apple Silicon 芯片）
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | arch -x86_64 /bin/bash
 ```
 
-中国用户可以使用[上海交通大学 SJTUG](https://mirror.sjtu.edu.cn/docs/ghcup)的 GHCup 安装镜像，见如下：
+中国用户可以使用[上海交通大学 SJTUG](https://mirror.sjtu.edu.cn/docs/ghcup) 的 GHCup 安装镜像，见如下：
 
 Linux、macOS（搭载 Intel 芯片）、FreeBSD 或适用于 Linux 的 Windows 子系统
 
